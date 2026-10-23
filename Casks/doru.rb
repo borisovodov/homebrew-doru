@@ -1,7 +1,6 @@
 cask "doru" do
   version "0.0.11"
 
-  # Intel builds are not published yet; add an on_intel block when they are.
   on_arm do
     sha256 "072808bd2e78c03c0fe5b41c976546b99f8bc6e87f44482ca9e62b6e35263630"
 
@@ -20,9 +19,6 @@ cask "doru" do
   depends_on arch: :arm64
   depends_on macos: :ventura
 
-  # No self-update mechanism; Homebrew is the update channel for this cask.
-  # 0.0.11 ships the bundle as "doru.app"; releases from 0.0.12 rename it to
-  # "Doru.app" — update this line together with the version bump.
   app "doru.app"
 
   zap trash: [

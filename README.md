@@ -22,8 +22,8 @@ brew livecheck doru
 ```
 
 The cask installs the signed and notarized dmg from the project's GitHub
-releases. Requirements: macOS 13 (Ventura) or later on Apple Silicon. Intel
-builds are not published yet, so the cask declares `depends_on arch: :arm64`
-and has no `on_intel` block. The app has no self-update mechanism, so
-Homebrew is the update channel: each release bumps `version` and `sha256` in
-`Casks/doru.rb` (the `livecheck` block tracks the GitHub releases).
+releases. Dóru is Apple Silicon only: macOS 13 (Ventura) or later, and the
+cask declares `depends_on arch: :arm64`. The app has no self-update
+mechanism, so Homebrew is the update channel: each release bumps `version`
+and `sha256` in `Casks/doru.rb` (the `livecheck` block tracks the GitHub
+releases).
