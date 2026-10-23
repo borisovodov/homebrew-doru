@@ -19,7 +19,7 @@ cask "doru" do
   depends_on arch: :arm64
   depends_on macos: :ventura
 
-  app "doru.app"
+  app "Doru.app"
 
   zap trash: [
     "~/Library/Application Support/Doru",
