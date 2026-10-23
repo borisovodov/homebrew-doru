@@ -21,6 +21,8 @@ cask "doru" do
   depends_on macos: :ventura
 
   # No self-update mechanism; Homebrew is the update channel for this cask.
+  # 0.0.11 ships the bundle as "doru.app"; releases from 0.0.12 rename it to
+  # "Doru.app" — update this line together with the version bump.
   app "doru.app"
 
   zap trash: [
