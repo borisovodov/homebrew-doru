@@ -25,6 +25,10 @@ jobs:
         run: test -d "/Applications/Doru.app"
       - name: Verify livecheck
         run: brew livecheck doru
+        env:
+          # Unauthenticated GitHub API calls from runner IPs hit the 60/hour
+          # rate limit; the job token raises it to 5000/hour.
+          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   casks-linux:
     runs-on: ubuntu-latest
