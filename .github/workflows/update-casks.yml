@@ -2,8 +2,9 @@ name: Update casks
 
 on:
   schedule:
-    # Hourly. The check is a single feed request when nothing changed.
-    - cron: '23 * * * *'
+    # Every four hours, like the bucket's excavator. A single unauthenticated
+    # API call per run — far below the 60/hour rate limit.
+    - cron: '47 */4 * * *'
   workflow_dispatch:
 
 permissions:
@@ -17,12 +18,10 @@ jobs:
       - name: Update cask if a new doru release exists
         run: |
           set -euo pipefail
-          # The GitHub API is not reachable with the workflow token outside
-          # this repository, so the latest version comes from the public
-          # releases.atom feed (newest entry first, no rate limits).
-          atom=$(curl -fsSL https://github.com/borisovodov/doru/releases.atom)
-          tag=$(printf '%s' "${atom}" | grep -m1 -oE '/releases/tag/v[0-9]+(\.[0-9]+)*' | head -1 | grep -oE 'v[0-9]+(\.[0-9]+)*$')
-          version="${tag#v}"
+          # One unauthenticated call: public repository data, asset digests
+          # included. No secrets, no downloads.
+          release=$(curl -fsSL https://api.github.com/repos/borisovodov/doru/releases/latest)
+          version=$(printf '%s' "${release}" | jq -r '.tag_name' | sed 's/^v//')
           current=$(grep -m1 'version "' Casks/doru.rb | sed -E 's/.*version "([^"]+)".*/\1/')
           echo "latest release: ${version}, cask version: ${current}"
           if [ "${version}" = "${current}" ]; then
@@ -30,18 +29,12 @@ jobs:
             exit 0
           fi
 
-          # Download the three artifacts the cask pins and hash them.
-          base="https://github.com/borisovodov/doru/releases/download/${tag}"
-          tmp=$(mktemp -d)
-          curl -fsSL -o "${tmp}/doru-mac-arm64.dmg" "${base}/doru-mac-arm64.dmg"
-          curl -fsSL -o "${tmp}/doru-linux-arm64.AppImage" "${base}/doru-linux-arm64.AppImage"
-          curl -fsSL -o "${tmp}/doru-linux-x86_64.AppImage" "${base}/doru-linux-x86_64.AppImage"
-          arm=$(sha256sum "${tmp}/doru-mac-arm64.dmg" | cut -d' ' -f1)
-          arm64_linux=$(sha256sum "${tmp}/doru-linux-arm64.AppImage" | cut -d' ' -f1)
-          x86_64_linux=$(sha256sum "${tmp}/doru-linux-x86_64.AppImage" | cut -d' ' -f1)
+          arm=$(printf '%s' "${release}" | jq -r '.assets[] | select(.name == "doru-mac-arm64.dmg") | .digest' | sed 's/^sha256://')
+          arm64_linux=$(printf '%s' "${release}" | jq -r '.assets[] | select(.name == "doru-linux-arm64.AppImage") | .digest' | sed 's/^sha256://')
+          x86_64_linux=$(printf '%s' "${release}" | jq -r '.assets[] | select(.name == "doru-linux-x86_64.AppImage") | .digest' | sed 's/^sha256://')
           for hash in "${arm}" "${arm64_linux}" "${x86_64_linux}"; do
             if [ -z "${hash}" ] || [ "${#hash}" -ne 64 ]; then
-              echo "::error::missing or malformed sha256 in release ${tag}"
+              echo "::error::missing or malformed sha256 digest in release v${version}"
               exit 1
             fi
           done

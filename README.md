@@ -26,6 +26,8 @@ Homebrew versions cannot parse it.
 ## Updates
 
 The `update-casks.yml` workflow checks for new releases of the tracked
-projects every hour and commits cask updates (version and sha256 entries,
-taken from the release assets' API digests) directly to `main` — no manual
-bumps needed. It can also be triggered manually (workflow_dispatch).
+projects every four hours and commits cask updates (version and sha256
+entries) directly to `main` — no manual bumps needed. The version and the
+three hashes come from one unauthenticated GitHub API call (release assets
+expose their sha256 as `digest`), so the bot needs no secrets and downloads
+nothing. It can also be triggered manually (workflow_dispatch).
