@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  casks-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Tap locally
+        run: brew tap borisovodov/taps "$PWD"
+      - name: Trust tap
+        run: brew trust borisovodov/taps || true
+      - name: Lint
+        run: |
+          brew style --cask doru
+          brew audit --cask doru
+      - name: Install
+        run: brew install --cask doru
+      - name: Verify the installed app
+        run: test -d "/Applications/Doru.app"
+      - name: Verify livecheck
+        run: brew livecheck doru
+
+  casks-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Ensure Homebrew
+        run: |
+          if ! command -v brew >/dev/null 2>&1; then
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+            echo "/home/linuxbrew/.linuxbrew/bin" >> "$GITHUB_PATH"
+          fi
+      - name: Tap locally
+        run: brew tap borisovodov/taps "$PWD"
+      - name: Trust tap
+        run: brew trust borisovodov/taps || true
+      - name: Install
+        run: brew install --cask doru
+      - name: Verify the installed AppImage
+        run: test -x "$HOME/Applications/Doru.AppImage"

@@ -1,32 +1,30 @@
-# homebrew-doru
+# homebrew-taps
 
-Homebrew cask tap for [Dóru](https://doru.family) — local-first genealogy for
-the AI era.
-
-Install:
+Personal Homebrew tap for applications I distribute through Homebrew. It is
+a complete cask tap; install the tap, then any cask from it:
 
 ```sh
-brew tap borisovodov/doru
-brew trust borisovodov/doru   # Homebrew 7+: third-party taps are untrusted by default
-brew install --cask doru
+brew tap borisovodov/taps
+brew trust borisovodov/taps   # Homebrew 7+: third-party taps are untrusted by default
+brew install --cask <cask>
 ```
 
-Test locally without publishing (from this directory):
+## Casks
 
-```sh
-brew tap borisovodov/doru "$PWD"
-brew install --cask doru
-brew audit --cask doru
-brew style doru
-brew livecheck doru
-```
+| Cask | Description | Homepage |
+|---|---|---|
+| [doru](Casks/doru.rb) | Local-first genealogy for the AI era | https://doru.family |
 
-The cask installs the signed and notarized dmg from the project's GitHub
-releases. Dóru is Apple Silicon only on macOS: macOS 13 (Ventura) or later,
-and the cask declares `depends_on arch: :arm64`. On Linux, the cask installs
-the AppImage into `~/Applications` (x86_64 and arm64). The app has no
-self-update mechanism (`auto_updates false`), so Homebrew is the update
+Dóru's cask installs the signed and notarized macOS dmg (Apple Silicon,
+macOS 13 or later) and the AppImage on Linux (x86_64 and arm64). The app has
+no self-update mechanism (`auto_updates false`), so Homebrew is the update
 channel: each release bumps `version` and the `sha256` entries in
 `Casks/doru.rb` (the `livecheck` block tracks the GitHub releases). The cask
 uses Homebrew 7 cask DSL (`on_system_conditional`, `app_image`); older
 Homebrew versions cannot parse it.
+
+## CI
+
+The `tests.yml` workflow installs every cask in the tap on both `macos-latest`
+and `ubuntu-latest` (Linuxbrew) on every push — the same commands a user runs
+— plus `brew style` and `brew audit`.
