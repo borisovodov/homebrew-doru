@@ -43,18 +43,7 @@ jobs:
             fi
           done
 
-          python3 - "${version}" "${arm}" "${arm64_linux}" "${x86_64_linux}" <<'PY'
-import re, sys
-version, arm, arm64_linux, x86_64_linux = sys.argv[1:5]
-path = "Casks/doru.rb"
-text = open(path).read()
-text = re.sub(r'version "[^"]+"', f'version "{version}"', text, count=1)
-text = re.sub(r'(arm:\s+)"[0-9a-f]{64}"', rf'\1"{arm}"', text)
-text = re.sub(r'(arm64_linux:\s+)"[0-9a-f]{64}"', rf'\1"{arm64_linux}"', text)
-text = re.sub(r'(x86_64_linux:\s+)"[0-9a-f]{64}"', rf'\1"{x86_64_linux}"', text)
-open(path, "w").write(text)
-print(f"updated {path} to {version}")
-PY
+          python3 scripts/update-cask.py "${version}" "${arm}" "${arm64_linux}" "${x86_64_linux}"
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
