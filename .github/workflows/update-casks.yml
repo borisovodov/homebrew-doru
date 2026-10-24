@@ -1,0 +1,63 @@
+name: Update casks
+
+on:
+  schedule:
+    # Hourly. The check is a single API call when nothing changed.
+    - cron: '23 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Update cask if a new doru release exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          latest=$(gh api repos/borisovodov/doru/releases/latest --jq -r '.tag_name')
+          version="${latest#v}"
+          current=$(grep -m1 'version "' Casks/doru.rb | sed -E 's/.*version "([^"]+)".*/\1/')
+          echo "latest release: ${version}, cask version: ${current}"
+          if [ "${version}" = "${current}" ]; then
+            echo "Cask is up to date; nothing to do."
+            exit 0
+          fi
+
+          # Release assets expose their sha256 in the GitHub API ("digest"),
+          # so the update needs no downloads.
+          arm=$(gh api "repos/borisovodov/doru/releases/tags/${latest}" --jq -r \
+            '.assets[] | select(.name == "doru-mac-arm64.dmg") | .digest' | sed 's/^sha256://')
+          arm64_linux=$(gh api "repos/borisovodov/doru/releases/tags/${latest}" --jq -r \
+            '.assets[] | select(.name == "doru-linux-arm64.AppImage") | .digest' | sed 's/^sha256://')
+          x86_64_linux=$(gh api "repos/borisovodov/doru/releases/tags/${latest}" --jq -r \
+            '.assets[] | select(.name == "doru-linux-x86_64.AppImage") | .digest' | sed 's/^sha256://')
+          for hash in "${arm}" "${arm64_linux}" "${x86_64_linux}"; do
+            if [ -z "${hash}" ] || [ "${#hash}" -ne 64 ]; then
+              echo "::error::missing or malformed sha256 in release ${latest}"
+              exit 1
+            fi
+          done
+
+          python3 - "${version}" "${arm}" "${arm64_linux}" "${x86_64_linux}" <<'PY'
+import re, sys
+version, arm, arm64_linux, x86_64_linux = sys.argv[1:5]
+path = "Casks/doru.rb"
+text = open(path).read()
+text = re.sub(r'version "[^"]+"', f'version "{version}"', text, count=1)
+text = re.sub(r'(arm:\s+)"[0-9a-f]{64}"', rf'\1"{arm}"', text)
+text = re.sub(r'(arm64_linux:\s+)"[0-9a-f]{64}"', rf'\1"{arm64_linux}"', text)
+text = re.sub(r'(x86_64_linux:\s+)"[0-9a-f]{64}"', rf'\1"{x86_64_linux}"', text)
+open(path, "w").write(text)
+print(f"updated {path} to {version}")
+PY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Casks/doru.rb
+          git commit -m "doru ${version}"
+          git push

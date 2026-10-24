@@ -23,8 +23,9 @@ channel: each release bumps `version` and the `sha256` entries in
 uses Homebrew 7 cask DSL (`on_system_conditional`, `app_image`); older
 Homebrew versions cannot parse it.
 
-## CI
+## Updates
 
-The `tests.yml` workflow installs every cask in the tap on both `macos-latest`
-and `ubuntu-latest` (Linuxbrew) on every push — the same commands a user runs
-— plus `brew style` and `brew audit`.
+The `update-casks.yml` workflow checks for new releases of the tracked
+projects every hour and commits cask updates (version and sha256 entries,
+taken from the release assets' API digests) directly to `main` — no manual
+bumps needed. It can also be triggered manually (workflow_dispatch).
